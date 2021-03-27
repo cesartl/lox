@@ -6,12 +6,16 @@ class JvmEnvironment(private val enclosing: JvmEnvironment? = null) {
     private val values = mutableMapOf<String, Any?>()
 
     fun define(name: String, value: Any?) {
-        values[name] = value
+        values[name] = value ?: Special.UNDEFINED
     }
 
     fun get(name: Token): Any? {
         if (values.contains(name.lexeme)) {
-            return values[name.lexeme]
+            val value = values[name.lexeme]
+            if (value == Special.UNDEFINED) {
+                throw RuntimeError(name, "Variable '${name.lexeme}' is not initialized.")
+            }
+            return value
         }
         if (enclosing != null) {
             return enclosing.get(name)
@@ -30,6 +34,12 @@ class JvmEnvironment(private val enclosing: JvmEnvironment? = null) {
             else -> {
                 throw RuntimeError(name, "Undefined variable '${name.lexeme}'.")
             }
+        }
+    }
+
+    companion object {
+        enum class Special {
+            UNDEFINED
         }
     }
 }
