@@ -8,3 +8,8 @@ sealed class Expr {
     data class Literal(val value: Any?) : Expr()
     data class Unary(val operator: Token, val right: Expr) : Expr()
 }
+
+sealed class Stmt {
+    data class Expression(val expression: Expr) : Stmt()
+    data class Print(val expression: Expr) : Stmt()
+}

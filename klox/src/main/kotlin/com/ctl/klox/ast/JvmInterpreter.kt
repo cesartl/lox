@@ -7,30 +7,28 @@ import java.util.*
 
 class JvmInterpreter() {
 
-    fun interpret(expr: Expr) {
+    fun interpret(statements: List<Stmt>) {
         try {
-            val value = evaluate(expr)
-            println(stringify(value))
+            statements.forEach {
+                execute(it)
+            }
         } catch (e: RuntimeError) {
             Lox.runtimeError(e)
         }
     }
 
-    private fun stringify(any: Any?): String {
-        return when (any) {
-            null -> "nil"
-            is Double -> {
-                val text = any.toString()
-                if (text.endsWith(".0")) {
-                    text.substring(0, text.length - 2)
-                } else {
-                    text
-                }
+    private fun execute(stmt: Stmt) {
+        when (stmt) {
+            is Stmt.Expression -> {
+                evaluate(stmt.expression)
             }
-            else -> any.toString()
+            is Stmt.Print -> {
+                val value = evaluate(stmt.expression)
+                println(stringify(value))
+            }
         }
-    }
 
+    }
 
     private fun evaluate(expr: Expr): Any? {
         return when (expr) {
@@ -92,6 +90,21 @@ class JvmInterpreter() {
                     else -> null
                 }
             }
+        }
+    }
+
+    private fun stringify(any: Any?): String {
+        return when (any) {
+            null -> "nil"
+            is Double -> {
+                val text = any.toString()
+                if (text.endsWith(".0")) {
+                    text.substring(0, text.length - 2)
+                } else {
+                    text
+                }
+            }
+            else -> any.toString()
         }
     }
 
