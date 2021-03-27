@@ -7,6 +7,8 @@ import java.util.*
 
 class JvmInterpreter() {
 
+    private var environment = JvmEnvironment()
+
     fun interpret(statements: List<Stmt>) {
         try {
             statements.forEach {
@@ -17,7 +19,7 @@ class JvmInterpreter() {
         }
     }
 
-    private fun execute(stmt: Stmt) {
+    fun execute(stmt: Stmt) {
         when (stmt) {
             is Stmt.Expression -> {
                 evaluate(stmt.expression)
@@ -26,11 +28,16 @@ class JvmInterpreter() {
                 val value = evaluate(stmt.expression)
                 println(stringify(value))
             }
+            is Stmt.Var -> {
+                val value = stmt.initializer?.let { evaluate(it) }
+                environment.define(stmt.name.lexeme, value)
+            }
+            is Stmt.Block -> executeBlock(stmt.statements, JvmEnvironment(environment))
         }
 
     }
 
-    private fun evaluate(expr: Expr): Any? {
+    fun evaluate(expr: Expr): Any? {
         return when (expr) {
             is Expr.Literal -> expr.value
             is Expr.Grouping -> evaluate(expr.expression)
@@ -90,6 +97,22 @@ class JvmInterpreter() {
                     else -> null
                 }
             }
+            is Expr.Variable -> environment.get(expr.name)
+            is Expr.Assign -> {
+                val value = evaluate(expr.value)
+                environment.assign(expr.name, value)
+                return value
+            }
+        }
+    }
+
+    private fun executeBlock(statements: List<Stmt>, environment: JvmEnvironment) {
+        val previous = this.environment
+        try {
+            this.environment = environment
+            statements.forEach { execute(it) }
+        } finally {
+            this.environment = previous
         }
     }
 

@@ -2,6 +2,7 @@ package com.ctl.klox
 
 import com.ctl.klox.ast.JvmInterpreter
 import com.ctl.klox.ast.RuntimeError
+import com.ctl.klox.ast.Stmt
 import java.io.InputStreamReader
 import java.nio.charset.Charset
 import java.nio.file.Files
@@ -43,9 +44,20 @@ object Lox {
         val reader = InputStreamReader(System.`in`).buffered()
         while (true) {
             print("lox> ")
-            val line: String = reader.readLine() ?: break
-            run(line)
-            hadError = false
+            try {
+                val line: String = reader.readLine() ?: break
+                val scanner = Scanner(line)
+                val parser = Parser(scanner.scanTokens())
+                when (val p = parser.parse().first()) {
+                    is Stmt.Expression -> {
+                        println(interpreter.evaluate(p.expression))
+                    }
+                    else -> interpreter.execute(p)
+                }
+                hadError = false
+            } catch (e: RuntimeError) {
+                error(e.token, e.message ?: "Runtime error")
+            }
         }
     }
 
