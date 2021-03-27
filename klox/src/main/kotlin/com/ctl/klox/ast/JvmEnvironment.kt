@@ -5,8 +5,8 @@ import com.ctl.klox.Token
 class JvmEnvironment(private val enclosing: JvmEnvironment? = null) {
     private val values = mutableMapOf<String, Any?>()
 
-    fun define(name: String, value: Any?) {
-        values[name] = value ?: Special.UNDEFINED
+    fun define(name: String, value: Any? = Special.UNDEFINED) {
+        values[name] = value
     }
 
     fun get(name: Token): Any? {

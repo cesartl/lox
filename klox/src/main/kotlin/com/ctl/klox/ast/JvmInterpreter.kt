@@ -29,8 +29,9 @@ class JvmInterpreter() {
                 println(stringify(value))
             }
             is Stmt.Var -> {
-                val value = stmt.initializer?.let { evaluate(it) }
-                environment.define(stmt.name.lexeme, value)
+                stmt.initializer?.let {
+                    environment.define(stmt.name.lexeme, evaluate(it))
+                } ?: environment.define(stmt.name.lexeme)
             }
             is Stmt.Block -> executeBlock(stmt.statements, JvmEnvironment(environment))
         }
