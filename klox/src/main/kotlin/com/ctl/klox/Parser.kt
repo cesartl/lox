@@ -86,7 +86,7 @@ class Parser(private val tokens: List<Token>) {
     }
 
     private fun assignment(): Expr {
-        val expr = equality()
+        val expr = or()
         if (match(EQUAL)) {
             val equals = previous()
             val value = assignment()
@@ -99,6 +99,14 @@ class Parser(private val tokens: List<Token>) {
             }
         }
         return expr
+    }
+
+    private fun or(): Expr {
+        return logical({ and() }, OR)
+    }
+
+    private fun and(): Expr {
+        return logical({ equality() }, AND)
     }
 
     private fun equality(): Expr {
@@ -164,11 +172,23 @@ class Parser(private val tokens: List<Token>) {
     }
 
     private fun binary(operand: () -> Expr, vararg types: TokenType): Expr {
+        return manyOperator(operand, { left, operator, right -> Expr.Binary(left, operator, right) }, *types)
+    }
+
+    private fun logical(operand: () -> Expr, vararg types: TokenType): Expr {
+        return manyOperator(operand, { left, operator, right -> Expr.Logical(left, operator, right) }, *types)
+    }
+
+    private fun manyOperator(
+        operand: () -> Expr,
+        exprConstructor: (Expr, Token, Expr) -> Expr,
+        vararg types: TokenType
+    ): Expr {
         var expr = operand()
         while (match(*types)) {
             val operator = previous()
             val right = operand()
-            expr = Expr.Binary(expr, operator, right)
+            expr = exprConstructor(expr, operator, right)
         }
         return expr
     }

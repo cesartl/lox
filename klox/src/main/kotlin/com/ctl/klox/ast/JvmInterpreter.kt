@@ -2,6 +2,7 @@ package com.ctl.klox.ast
 
 import com.ctl.klox.Lox
 import com.ctl.klox.Token
+import com.ctl.klox.TokenType
 import com.ctl.klox.TokenType.*
 import java.util.*
 
@@ -110,6 +111,14 @@ class JvmInterpreter() {
                 val value = evaluate(expr.value)
                 environment.assign(expr.name, value)
                 return value
+            }
+            is Expr.Logical -> {
+                val left = evaluate(expr.left)
+                return when (expr.operator.type) {
+                    OR -> if (isTruthy(left)) left else evaluate(expr.right)
+                    AND -> if (!isTruthy(left)) left else evaluate(expr.right)
+                    else -> null
+                }
             }
         }
     }
