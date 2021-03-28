@@ -42,6 +42,11 @@ class JvmInterpreter() {
                     execute(stmt.elseBranch)
                 }
             }
+            is Stmt.While -> {
+                while (isTruthy(evaluate(stmt.condition))) {
+                    execute(stmt.body)
+                }
+            }
         }
 
     }
