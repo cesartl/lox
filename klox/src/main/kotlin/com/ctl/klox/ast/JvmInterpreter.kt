@@ -34,6 +34,13 @@ class JvmInterpreter() {
                 } ?: environment.define(stmt.name.lexeme)
             }
             is Stmt.Block -> executeBlock(stmt.statements, JvmEnvironment(environment))
+            is Stmt.If -> {
+                if (isTruthy(evaluate(stmt.condition))) {
+                    execute(stmt.thenBranch)
+                } else if (stmt.elseBranch != null) {
+                    execute(stmt.elseBranch)
+                }
+            }
         }
 
     }
