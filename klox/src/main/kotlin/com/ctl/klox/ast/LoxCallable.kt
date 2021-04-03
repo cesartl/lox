@@ -4,3 +4,21 @@ interface LoxCallable {
     fun call(interpreter: JvmInterpreter, arguments: List<Any?>): Any?
     fun arity(): Int
 }
+
+data class LoxFunction(val declaration: Stmt.Function) : LoxCallable {
+    override fun call(interpreter: JvmInterpreter, arguments: List<Any?>): Any? {
+        val environment = JvmEnvironment(interpreter.globals)
+        declaration.params.zip(arguments).forEach { (token, arg) ->
+            environment.define(token.lexeme, arg)
+        }
+        interpreter.executeBlock(declaration.body, environment)
+        return null
+    }
+
+    override fun arity(): Int = declaration.params.size
+    override fun toString(): String {
+        return "<fn ${declaration.name.lexeme}>"
+    }
+
+
+}

@@ -8,13 +8,13 @@ import java.util.*
 
 class JvmInterpreter {
 
-    private val globals = JvmEnvironment()
+    val globals = JvmEnvironment()
     private var environment = globals
 
     init {
         globals.define("clock", object : LoxCallable {
             override fun call(interpreter: JvmInterpreter, arguments: List<Any?>): Any? {
-                return Instant.now().epochSecond
+                return Instant.now().epochSecond.toDouble()
             }
 
             override fun arity(): Int = 0
@@ -58,6 +58,10 @@ class JvmInterpreter {
                 while (isTruthy(evaluate(stmt.condition))) {
                     execute(stmt.body)
                 }
+            }
+            is Stmt.Function -> {
+                val function = LoxFunction(stmt)
+                environment.define(stmt.name.lexeme, function)
             }
         }
 
@@ -156,7 +160,7 @@ class JvmInterpreter {
         }
     }
 
-    private fun executeBlock(statements: List<Stmt>, environment: JvmEnvironment) {
+    fun executeBlock(statements: List<Stmt>, environment: JvmEnvironment) {
         val previous = this.environment
         try {
             this.environment = environment
