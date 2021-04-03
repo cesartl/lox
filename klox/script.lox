@@ -12,11 +12,9 @@ fun forHippo(n, f, g){
     f();
     print "";
 }
-fun loop(n){
+
+
+tailrec fun loop(n){
     if(n > 0) loop(n-1);
 }
-
-var s = clock();
-loop(10);
-var e = clock();
-print (e - s) + "s";
+loop(4000);

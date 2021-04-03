@@ -61,7 +61,7 @@ object Lox {
         }
     }
 
-    private fun run(source: String) {
+    fun run(source: String) {
         val scanner = Scanner(source)
         val parser = Parser(scanner.scanTokens())
         val statements = parser.parse()

@@ -18,6 +18,10 @@ class Parser(private val tokens: List<Token>) {
     private fun declaration(): Stmt? {
         return try {
             when {
+                match(TAILREC) -> {
+                    consume(FUN, "Expected 'fun' after tailrec.")
+                    function("function", true)
+                }
                 match(FUN) -> function("function")
                 match(VAR) -> varDeclaration()
                 else -> statement()
@@ -28,7 +32,7 @@ class Parser(private val tokens: List<Token>) {
         }
     }
 
-    private fun function(kind: String): Stmt? {
+    private fun function(kind: String, tailrec: Boolean = false): Stmt? {
         val name = consume(IDENTIFIER, "Expect $kind name.")
         consume(LEFT_PAREN, "Expect '(' after $kind name.")
         val parameters = mutableListOf<Token>()
@@ -43,7 +47,41 @@ class Parser(private val tokens: List<Token>) {
         consume(RIGHT_PAREN, "Expect ')' after $kind name.")
         consume(LEFT_BRACE, "Expect '{' before $kind body.")
         val body = block()
+
+        if (tailrec && body.isNotEmpty()) {
+            val last = body.last()
+            if (last is Stmt.If) {
+                val thenBranch = last.thenBranch
+                val call = extractFunctionCall(thenBranch)
+                if (call != null) {
+                    if (call.callee is Expr.Variable && call.callee.name.lexeme == name.lexeme) {
+                        // tail call !!
+                        println("Optimizing tail call for function ${name.lexeme}")
+                        val assignments = parameters.zip(call.arguments).map { (param, arg) ->
+                            Stmt.Expression(Expr.Assign(param, arg))
+                        }
+                        val whileBody = Stmt.Block(body.dropLast(1) + assignments)
+                        val newBody = listOfNotNull(Stmt.While(last.condition, whileBody), last.elseBranch)
+                        return Stmt.Function(name, parameters, newBody)
+                    }
+                }
+            }
+        }
+        if (tailrec) {
+            error(name, "tailrec function is not tail recursive.")
+        }
+
         return Stmt.Function(name, parameters, body)
+    }
+
+    private fun extractFunctionCall(stmt: Stmt): Expr.Call? {
+        if (stmt is Stmt.Expression) {
+            val expression = stmt.expression
+            if (expression is Expr.Call) {
+                return expression
+            }
+        }
+        return null
     }
 
     private fun varDeclaration(): Stmt {
