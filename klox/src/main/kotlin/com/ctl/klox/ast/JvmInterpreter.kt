@@ -2,13 +2,25 @@ package com.ctl.klox.ast
 
 import com.ctl.klox.Lox
 import com.ctl.klox.Token
-import com.ctl.klox.TokenType
 import com.ctl.klox.TokenType.*
+import java.time.Instant
 import java.util.*
 
-class JvmInterpreter() {
+class JvmInterpreter {
 
-    private var environment = JvmEnvironment()
+    private val globals = JvmEnvironment()
+    private var environment = globals
+
+    init {
+        globals.define("clock", object : LoxCallable {
+            override fun call(interpreter: JvmInterpreter, arguments: List<Any?>): Any? {
+                return Instant.now().epochSecond
+            }
+
+            override fun arity(): Int = 0
+
+        })
+    }
 
     fun interpret(statements: List<Stmt>) {
         try {
@@ -123,6 +135,22 @@ class JvmInterpreter() {
                     OR -> if (isTruthy(left)) left else evaluate(expr.right)
                     AND -> if (!isTruthy(left)) left else evaluate(expr.right)
                     else -> null
+                }
+            }
+            is Expr.Call -> {
+                val callee = evaluate(expr.callee)
+                val arguments = expr.arguments.map { evaluate(it) }
+                return when (callee) {
+                    is LoxCallable -> {
+                        if (arguments.size != callee.arity()) {
+                            throw RuntimeError(
+                                expr.paren,
+                                "Expected ${callee.arity()} arguments but got ${arguments.size}."
+                            )
+                        }
+                        callee.call(this, arguments)
+                    }
+                    else -> throw RuntimeError(expr.paren, "Can only call function and classes")
                 }
             }
         }

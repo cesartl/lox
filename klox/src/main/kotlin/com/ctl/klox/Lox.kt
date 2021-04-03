@@ -48,11 +48,11 @@ object Lox {
                 val line: String = reader.readLine() ?: break
                 val scanner = Scanner(line)
                 val parser = Parser(scanner.scanTokens())
-                when (val p = parser.parse().first()) {
+                when (val p = parser.parse().firstOrNull()) {
                     is Stmt.Expression -> {
                         println(interpreter.evaluate(p.expression))
                     }
-                    else -> interpreter.execute(p)
+                    else -> p?.let { interpreter.execute(it) }
                 }
                 hadError = false
             } catch (e: RuntimeError) {
