@@ -37,6 +37,11 @@ class JvmEnvironment(private val enclosing: JvmEnvironment? = null) {
         }
     }
 
+    fun bindings(): Map<String, Any?> {
+        val previous = enclosing?.let { bindings() } ?: mapOf()
+        return values + previous
+    }
+
     companion object {
         enum class Special {
             UNDEFINED

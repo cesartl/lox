@@ -99,10 +99,18 @@ class Parser(private val tokens: List<Token>) {
             match(PRINT) -> printStatement()
             match(LEFT_BRACE) -> Stmt.Block(block())
             match(IF) -> ifStatement()
+            match(RETURN) -> returnStatement()
             match(WHILE) -> whileStatement()
             match(FOR) -> forStatement()
             else -> expressionStatement()
         }
+    }
+
+    private fun returnStatement(): Stmt {
+        val keyword = previous()
+        val value = if (!check(SEMICOLON)) expression() else null
+        consume(SEMICOLON, "Expect ';' after return value.")
+        return Stmt.Return(keyword, value)
     }
 
     private fun forStatement(): Stmt {
@@ -342,4 +350,4 @@ class Parser(private val tokens: List<Token>) {
     }
 }
 
-private class ParseError() : RuntimeException()
+private class ParseError : RuntimeException()

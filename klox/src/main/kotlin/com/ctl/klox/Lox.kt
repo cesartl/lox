@@ -1,5 +1,6 @@
 package com.ctl.klox
 
+import com.ctl.klox.ast.JvmEnvironment
 import com.ctl.klox.ast.JvmInterpreter
 import com.ctl.klox.ast.RuntimeError
 import com.ctl.klox.ast.Stmt
@@ -67,6 +68,14 @@ object Lox {
         val statements = parser.parse()
         if (hadError) return
         interpreter.interpret(statements)
+    }
+
+    fun debug(source: String): Map<String, Any?> {
+        val scanner = Scanner(source)
+        val parser = Parser(scanner.scanTokens())
+        val statements = parser.parse()
+        if(hadError) error("Script had error")
+        return interpreter.debug(statements)
     }
 
     fun error(line: Int, message: String) {

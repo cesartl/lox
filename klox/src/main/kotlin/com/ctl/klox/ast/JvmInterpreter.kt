@@ -22,6 +22,11 @@ class JvmInterpreter {
         })
     }
 
+    fun debug(statements: List<Stmt>): Map<String, Any?> {
+        interpret(statements)
+        return environment.bindings()
+    }
+
     fun interpret(statements: List<Stmt>) {
         try {
             statements.forEach {
@@ -62,6 +67,9 @@ class JvmInterpreter {
             is Stmt.Function -> {
                 val function = LoxFunction(stmt)
                 environment.define(stmt.name.lexeme, function)
+            }
+            is Stmt.Return -> {
+                throw Return(stmt.value?.let { evaluate(it) })
             }
         }
 
@@ -212,3 +220,4 @@ class JvmInterpreter {
 }
 
 class RuntimeError(val token: Token, message: String) : RuntimeException(message)
+data class Return(val value: Any?) : RuntimeException(null, null, false, false)

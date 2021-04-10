@@ -11,7 +11,11 @@ data class LoxFunction(val declaration: Stmt.Function) : LoxCallable {
         declaration.params.zip(arguments).forEach { (token, arg) ->
             environment.define(token.lexeme, arg)
         }
-        interpreter.executeBlock(declaration.body, environment)
+        try {
+            interpreter.executeBlock(declaration.body, environment)
+        } catch (returnValue: Return) {
+            return returnValue.value
+        }
         return null
     }
 
