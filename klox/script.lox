@@ -1,20 +1,9 @@
-fun shamone(){
-    print "shamone!";
+fun foo(acc, n){
+  print "acc: " + acc;
+  print "n: " + n;
+  if(n == 0){
+    return acc;
+  }
+  return foo(2 * acc, n-1)
+var result = foo(10);
 }
-fun heeHee(){
-    print "Hee Hee!";
-}
-fun forHippo(n, f, g){
-    if(n > 0) forHippo(n-1, f, g);
-    f();
-    g();
-    g();
-    f();
-    print "";
-}
-
-
-tailrec fun loop(n){
-    if(n > 0) loop(n-1);
-}
-loop(4000);
