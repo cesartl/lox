@@ -4,6 +4,7 @@ import com.ctl.klox.TokenType.*
 import com.ctl.klox.ast.AstPrinter
 import com.ctl.klox.ast.Expr
 import com.ctl.klox.ast.Stmt
+import com.ctl.klox.ast.TailRecOptimizer
 
 class Parser(private val tokens: List<Token>) {
     private var current = 0
@@ -50,7 +51,7 @@ class Parser(private val tokens: List<Token>) {
         val body = block()
 
         if (tailrec) {
-            val tailCallFunction = extractTailCallFunction(body)
+            val tailCallFunction = TailRecOptimizer.extractTailCallFunction(body)
             if (tailCallFunction != null && tailCallFunction.isFor(name.lexeme)) {
                 println("Optimizing tail call for function ${name.lexeme}")
                 val call = tailCallFunction.tailCall.call
@@ -66,8 +67,8 @@ class Parser(private val tokens: List<Token>) {
                 val whileStmt = Stmt.While(condition, whileBody)
                 val newBody =
                     tailCallFunction.initialCalls +
-                        listOf(whileStmt) +
-                        tailCallFunction.terminationCalls
+                            listOf(whileStmt) +
+                            tailCallFunction.terminationCalls
                 println(AstPrinter().printStmts(newBody))
                 return Stmt.Function(name, parameters, newBody)
             }
@@ -77,80 +78,6 @@ class Parser(private val tokens: List<Token>) {
         }
 
         return Stmt.Function(name, parameters, body)
-    }
-
-    private fun extractTailCallFunction(body: List<Stmt>): TailCallFunction? {
-        if (body.isEmpty()) {
-            return null
-        }
-        val initial = body.dropLast(1)
-        return when (val last = body.last()) {
-            is Stmt.If -> {
-                val thenTailCall = extractTailCall(last.thenBranch)
-                if (thenTailCall != null) {
-                    TailCallFunction(
-                        tailCall = thenTailCall,
-                        condition = last.condition,
-                        terminationCalls = last.elseBranch?.let { extractStmts(it) } ?: listOf(),
-                        initialCalls = initial
-                    )
-                } else {
-                    val elseTailCall = last.elseBranch?.let { extractTailCall(it) }
-                    if (elseTailCall != null) {
-                        TailCallFunction(
-                            tailCall = elseTailCall,
-                            condition = Expr.Unary(Token(BANG, "!", null, 0, ), last.condition),
-                            terminationCalls = extractStmts(last.thenBranch),
-                            initialCalls = initial
-                        )
-                    } else {
-                        null
-                    }
-                }
-            }
-            is Stmt.Return, is Stmt.Expression ->{
-                extractTailCall(last)?.let { tailCall ->
-                    TailCallFunction(
-                        tailCall = tailCall,
-                        condition = null,
-                        terminationCalls = listOf(),
-                        initialCalls = initial
-                    )
-                }
-            }
-            else -> null
-        }
-    }
-
-    private fun extractStmts(stmt: Stmt): List<Stmt> = when (stmt) {
-        is Stmt.Block -> stmt.statements
-        else -> listOf(stmt)
-    }
-
-    private fun extractTailCall(stmt: Stmt): TailCall? {
-        return when (stmt) {
-            is Stmt.Expression -> {
-                val expression = stmt.expression
-                if (expression is Expr.Call) {
-                    TailCall(expression, stmt)
-                } else {
-                    null
-                }
-            }
-            is Stmt.Return -> {
-                val value = stmt.value
-                if (value is Expr.Call) {
-                    TailCall(value, stmt)
-                } else {
-                    null
-                }
-            }
-            is Stmt.Block -> {
-                val call = stmt.statements.lastOrNull()?.let { extractTailCall(it) }
-                call?.copy(callStmt = stmt, preCalls = stmt.statements.dropLast(1) + call.preCalls)
-            }
-            else -> null
-        }
     }
 
     private fun varDeclaration(): Stmt {
@@ -420,17 +347,3 @@ class Parser(private val tokens: List<Token>) {
 }
 
 private class ParseError : RuntimeException()
-
-private data class TailCallFunction(
-    val tailCall: TailCall,
-    val condition: Expr?,
-    val terminationCalls: List<Stmt>,
-    val initialCalls: List<Stmt>
-) {
-    fun isFor(functionName: String): Boolean {
-        val callee = tailCall.call.callee
-        return callee is Expr.Variable && callee.name.lexeme == functionName
-    }
-}
-
-private data class TailCall(val call: Expr.Call, val callStmt: Stmt, val preCalls: List<Stmt> = listOf())
