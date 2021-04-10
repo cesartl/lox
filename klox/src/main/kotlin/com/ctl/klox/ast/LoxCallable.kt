@@ -5,9 +5,9 @@ interface LoxCallable {
     fun arity(): Int
 }
 
-data class LoxFunction(val declaration: Stmt.Function) : LoxCallable {
+data class LoxFunction(val declaration: Stmt.Function, val closure: JvmEnvironment) : LoxCallable {
     override fun call(interpreter: JvmInterpreter, arguments: List<Any?>): Any? {
-        val environment = JvmEnvironment(interpreter.globals)
+        val environment = JvmEnvironment(closure)
         declaration.params.zip(arguments).forEach { (token, arg) ->
             environment.define(token.lexeme, arg)
         }

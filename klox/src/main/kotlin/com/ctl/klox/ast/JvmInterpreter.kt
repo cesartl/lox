@@ -16,9 +16,7 @@ class JvmInterpreter {
             override fun call(interpreter: JvmInterpreter, arguments: List<Any?>): Any? {
                 return Instant.now().epochSecond.toDouble()
             }
-
             override fun arity(): Int = 0
-
         })
     }
 
@@ -65,7 +63,7 @@ class JvmInterpreter {
                 }
             }
             is Stmt.Function -> {
-                val function = LoxFunction(stmt)
+                val function = LoxFunction(stmt, environment)
                 environment.define(stmt.name.lexeme, function)
             }
             is Stmt.Return -> {

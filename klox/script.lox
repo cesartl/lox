@@ -1,9 +1,13 @@
-fun foo(acc, n){
-  print "acc: " + acc;
-  print "n: " + n;
-  if(n == 0){
-    return acc;
+fun makeCounter() {
+  var i = 0;
+  fun count() {
+    i = i + 1;
+    print i;
   }
-  return foo(2 * acc, n-1)
-var result = foo(10);
+
+  return count;
 }
+
+var counter = makeCounter();
+counter(); // "1".
+counter(); // "2".
