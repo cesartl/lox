@@ -8,7 +8,8 @@ import java.util.*
 
 class JvmInterpreter {
 
-    val globals = JvmEnvironment()
+    private val locals = mutableMapOf<Expr, Int>()
+    private val globals = JvmEnvironment()
     private var environment = globals
 
     init {
@@ -16,6 +17,7 @@ class JvmInterpreter {
             override fun call(interpreter: JvmInterpreter, arguments: List<Any?>): Any? {
                 return Instant.now().epochSecond.toDouble()
             }
+
             override fun arity(): Int = 0
         })
     }
@@ -133,10 +135,12 @@ class JvmInterpreter {
                     else -> null
                 }
             }
-            is Expr.Variable -> environment.get(expr.name)
+            is Expr.Variable -> lookupVariable(expr.name, expr)
             is Expr.Assign -> {
                 val value = evaluate(expr.value)
-                environment.assign(expr.name, value)
+                locals[expr]?.let { distance ->
+                    environment.assignAt(distance, expr.name, value)
+                } ?: globals.assign(expr.name, value)
                 return value
             }
             is Expr.Logical -> {
@@ -164,6 +168,12 @@ class JvmInterpreter {
                 }
             }
         }
+    }
+
+    private fun lookupVariable(name: Token, expr: Expr.Variable): Any? {
+        return locals[expr]?.let { distance ->
+            environment.getAt(distance, name.lexeme)
+        } ?: globals.get(name)
     }
 
     fun executeBlock(statements: List<Stmt>, environment: JvmEnvironment) {
@@ -213,6 +223,10 @@ class JvmInterpreter {
             is Boolean -> value
             else -> true
         }
+    }
+
+    fun resolve(expr: Expr, depth: Int) {
+        locals[expr] = depth
     }
 
 }

@@ -17,10 +17,14 @@ class JvmEnvironment(private val enclosing: JvmEnvironment? = null) {
             }
             return value
         }
-        if (enclosing != null) {
-            return enclosing.get(name)
-        }
-        throw RuntimeError(name, "Undefined variable '${name.lexeme}'.")
+//        if (enclosing != null) {
+//            return enclosing.get(name)
+//        }
+        throw RuntimeError(name, "Undefined variable '${name.lexeme}[l${name.line}]'.")
+    }
+
+    fun getAt(distance: Int, name: String): Any? {
+        return ancestor(distance).values[name]
     }
 
     fun assign(name: Token, value: Any?) {
@@ -28,13 +32,21 @@ class JvmEnvironment(private val enclosing: JvmEnvironment? = null) {
             values.containsKey(name.lexeme) -> {
                 values[name.lexeme] = value
             }
-            enclosing != null -> {
-                enclosing.assign(name, value)
-            }
+//            enclosing != null -> {
+//                enclosing.assign(name, value)
+//            }
             else -> {
                 throw RuntimeError(name, "Undefined variable '${name.lexeme}'.")
             }
         }
+    }
+
+    fun assignAt(distance: Int, name: Token, value: Any?){
+        ancestor(distance).values.put(name.lexeme, value)
+    }
+
+    private fun ancestor(distance: Int): JvmEnvironment {
+        return generateSequence(this) { it.enclosing }.drop(distance).first()
     }
 
     fun bindings(): Map<String, Any?> {

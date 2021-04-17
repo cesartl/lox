@@ -16,10 +16,35 @@ sealed class Expr {
 sealed class Stmt {
     data class Block(val statements: List<Stmt>) : Stmt()
     data class Expression(val expression: Expr) : Stmt()
-    data class Function(val name: Token, val params: List<Token>, val body: List<Stmt>): Stmt()
+    data class Function(val name: Token, val params: List<Token>, val body: List<Stmt>) : Stmt()
     data class If(val condition: Expr, val thenBranch: Stmt, val elseBranch: Stmt?) : Stmt()
     data class Print(val expression: Expr) : Stmt()
-    data class Return(val keyword : Token, val value: Expr?): Stmt()
+    data class Return(val keyword: Token, val value: Expr?) : Stmt()
     data class Var(val name: Token, val initializer: Expr?) : Stmt()
     data class While(val condition: Expr, val body: Stmt) : Stmt()
+}
+
+fun Expr.lineOffset(offset: Int): Expr = when (this) {
+    is Expr.Assign -> this.copy(name = this.name.lineOffset(offset), value = this.value.lineOffset(offset))
+    is Expr.Binary -> this.copy(left.lineOffset(offset), operator.lineOffset(offset), right.lineOffset(offset))
+    is Expr.Call -> this.copy(
+        callee.lineOffset(offset),
+        paren.lineOffset(offset),
+        arguments.map { it.lineOffset(offset) })
+    is Expr.Grouping -> this.copy(expression.lineOffset(offset))
+    is Expr.Literal -> this
+    is Expr.Logical -> this.copy(left.lineOffset(offset), operator.lineOffset(offset), right.lineOffset(offset))
+    is Expr.Unary -> this.copy(operator.lineOffset(offset), right.lineOffset(offset))
+    is Expr.Variable -> this.copy(name.lineOffset(offset))
+}
+
+fun Stmt.lineOffset(offset: Int): Stmt = when(this){
+    is Stmt.Block -> this.copy(statements.map { it.lineOffset(offset) })
+    is Stmt.Expression -> this.copy(expression.lineOffset(offset))
+    is Stmt.Function -> this.copy(name.lineOffset(offset), params.map { it.lineOffset(offset) }, body.map { it.lineOffset(offset) })
+    is Stmt.If -> this.copy(condition.lineOffset(offset), thenBranch.lineOffset(offset), elseBranch?.lineOffset(offset))
+    is Stmt.Print -> this.copy(expression.lineOffset(offset))
+    is Stmt.Return -> this.copy(keyword.lineOffset(offset), value?.lineOffset(offset))
+    is Stmt.Var -> this.copy(name.lineOffset(offset), initializer?.lineOffset(offset))
+    is Stmt.While -> this.copy(condition.lineOffset(offset), body.lineOffset(offset))
 }

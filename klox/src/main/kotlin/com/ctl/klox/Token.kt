@@ -9,4 +9,6 @@ data class Token(
     override fun toString(): String {
         return "$type $lexeme $literal"
     }
+
+    fun lineOffset(offset: Int): Token = copy(line = line + offset)
 }

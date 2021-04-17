@@ -1,10 +1,8 @@
 package com.ctl.klox
 
 import com.ctl.klox.TokenType.*
-import com.ctl.klox.ast.AstPrinter
-import com.ctl.klox.ast.Expr
-import com.ctl.klox.ast.Stmt
-import com.ctl.klox.ast.TailRecOptimizer
+import com.ctl.klox.ast.*
+import kotlin.random.Random
 
 class Parser(private val tokens: List<Token>) {
     private var current = 0
@@ -65,10 +63,14 @@ class Parser(private val tokens: List<Token>) {
                 )
                 val condition = tailCallFunction.condition ?: Expr.Literal(true)
                 val whileStmt = Stmt.While(condition, whileBody)
+                // Currently needs to randomly modify the lines for the elements inside the while loop
+                // this is because this extra closure doesn't normally exist in the recursive form and
+                // copying the tokens as it confuses the Resolver.
+                val random = Random(System.currentTimeMillis())
                 val newBody =
-                    tailCallFunction.initialCalls +
-                            listOf(whileStmt) +
-                            tailCallFunction.terminationCalls
+                    (tailCallFunction.initialCalls +
+                            listOf(whileStmt.lineOffset(random.nextInt(99, 999))) +
+                            tailCallFunction.terminationCalls)
                 println(AstPrinter().printStmts(newBody))
                 return Stmt.Function(name, parameters, newBody)
             }

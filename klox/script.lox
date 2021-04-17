@@ -1,13 +1,8 @@
-fun makeCounter() {
-  var i = 0;
-  fun count() {
-    i = i + 1;
-    print i;
-  }
-
-  return count;
+tailrec fun foo(acc, n){
+    if(n == 0){
+        return acc;
+    }else{
+        return foo(acc+2, n-1);
+    }
 }
-
-var counter = makeCounter();
-counter(); // "1".
-counter(); // "2".
+print foo(1, 10);

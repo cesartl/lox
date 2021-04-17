@@ -17,7 +17,7 @@ class AstPrinter {
             }
         })"
         is Expr.Logical -> printExpr(expr.left) + expr.operator.lexeme + printExpr(expr.right)
-        is Expr.Variable -> expr.name.lexeme
+        is Expr.Variable -> "${expr.name.lexeme}[l${expr.name.line}]"
     }
 
     fun printStmts(stmts: List<Stmt>, indent: String = ""): String {

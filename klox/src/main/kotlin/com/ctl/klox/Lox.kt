@@ -1,9 +1,6 @@
 package com.ctl.klox
 
-import com.ctl.klox.ast.JvmEnvironment
-import com.ctl.klox.ast.JvmInterpreter
-import com.ctl.klox.ast.RuntimeError
-import com.ctl.klox.ast.Stmt
+import com.ctl.klox.ast.*
 import java.io.InputStreamReader
 import java.nio.charset.Charset
 import java.nio.file.Files
@@ -28,7 +25,7 @@ fun main(args: Array<String>) {
 
 object Lox {
 
-    private val interpreter = JvmInterpreter()
+    private var interpreter = JvmInterpreter()
 
     fun runFile(path: String) {
         val bytes = Files.readAllBytes(Paths.get(path))
@@ -43,6 +40,7 @@ object Lox {
 
     fun runPrompt() {
         val reader = InputStreamReader(System.`in`).buffered()
+        val resolver = Resolver(interpreter)
         while (true) {
             print("lox> ")
             try {
@@ -51,9 +49,21 @@ object Lox {
                 val parser = Parser(scanner.scanTokens())
                 when (val p = parser.parse().firstOrNull()) {
                     is Stmt.Expression -> {
-                        println(interpreter.evaluate(p.expression))
+                        if (!hadError) {
+                            resolver.resolve(p)
+                            if (!hadError) {
+                                println(interpreter.evaluate(p.expression))
+                            }
+                        }
                     }
-                    else -> p?.let { interpreter.execute(it) }
+                    else -> p?.let {
+                        if (!hadError) {
+                            resolver.resolve(p)
+                            if (!hadError) {
+                                interpreter.execute(it)
+                            }
+                        }
+                    }
                 }
                 hadError = false
             } catch (e: RuntimeError) {
@@ -62,19 +72,24 @@ object Lox {
         }
     }
 
-    fun run(source: String) {
+    private fun run(source: String) {
         val scanner = Scanner(source)
         val parser = Parser(scanner.scanTokens())
         val statements = parser.parse()
+        if (hadError) return
+        Resolver(interpreter).resolve(statements)
         if (hadError) return
         interpreter.interpret(statements)
     }
 
     fun debug(source: String): Map<String, Any?> {
+        interpreter = JvmInterpreter()
         val scanner = Scanner(source)
         val parser = Parser(scanner.scanTokens())
-        val statements = parser.parse()
         if(hadError) error("Script had error")
+        val statements = parser.parse()
+        Resolver(interpreter).resolve(statements)
+        if (hadError) error("Script had error")
         return interpreter.debug(statements)
     }
 
