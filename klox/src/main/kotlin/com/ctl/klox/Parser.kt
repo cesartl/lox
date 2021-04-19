@@ -71,7 +71,7 @@ class Parser(private val tokens: List<Token>) {
                     (tailCallFunction.initialCalls +
                             listOf(whileStmt.lineOffset(random.nextInt(99, 999))) +
                             tailCallFunction.terminationCalls)
-                println(AstPrinter().printStmts(newBody))
+//                println(AstPrinter().printStmts(newBody))
                 return Stmt.Function(name, parameters, newBody)
             }
         }

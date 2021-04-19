@@ -82,12 +82,15 @@ object Lox {
         interpreter.interpret(statements)
     }
 
-    fun debug(source: String): Map<String, Any?> {
+    fun debug(source: String, printSource: Boolean = false): Map<String, Any?> {
         interpreter = JvmInterpreter()
         val scanner = Scanner(source)
         val parser = Parser(scanner.scanTokens())
-        if(hadError) error("Script had error")
+        if (hadError) error("Script had error")
         val statements = parser.parse()
+        if (printSource) {
+            println(AstPrinter().printStmts(statements))
+        }
         Resolver(interpreter).resolve(statements)
         if (hadError) error("Script had error")
         return interpreter.debug(statements)

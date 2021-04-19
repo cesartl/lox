@@ -116,7 +116,7 @@ var result = foo(1, <iter>);
     }
 
     private fun assertResult(source: String, expected: Map<String, Double>) {
-        val env = Lox.debug(source)
+        val env = Lox.debug(source, true)
         expected.forEach { (key, value) ->
             assertEquals(value, env[key], "Variable $key")
         }
