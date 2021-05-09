@@ -8,6 +8,7 @@ class Resolver(private val interpreter: JvmInterpreter) {
 
     private val scopes = Stack<MutableMap<String, Boolean>>()
     var currentFunction = FunctionType.NONE
+    var currentClass = ClassType.NONE
 
     fun resolve(statements: List<Stmt>) {
         statements.forEach { resolve(it) }
@@ -40,14 +41,36 @@ class Resolver(private val interpreter: JvmInterpreter) {
             }
             is Stmt.Print -> resolve(stmt.expression)
             is Stmt.Return -> {
-                if(currentFunction == FunctionType.NONE){
+                if (currentFunction == FunctionType.NONE) {
                     Lox.error(stmt.keyword, "Can't return from top-level code.")
                 }
-                stmt.value?.let { resolve(it) }
+                stmt.value?.let {
+                    if (currentFunction == FunctionType.INITIALIZER) {
+                        Lox.error(stmt.keyword, "Can't return a value from an initializer.")
+                    }
+                    resolve(it)
+                }
             }
             is Stmt.While -> {
                 resolve(stmt.condition)
                 resolve(stmt.body)
+            }
+            is Stmt.Class -> {
+                val enclosingClass = currentClass
+                currentClass = ClassType.CLASS
+                declare(stmt.name)
+                beginScope()
+                scopes.peek()["this"] = true
+                stmt.methods.forEach { method ->
+                    var declaration = FunctionType.METHOD
+                    if(method.name.lexeme == "init"){
+                        declaration = FunctionType.INITIALIZER
+                    }
+                    resolveFunction(method, declaration)
+                }
+                define(stmt.name)
+                endScope()
+                currentClass = enclosingClass
             }
         }
     }
@@ -75,12 +98,26 @@ class Resolver(private val interpreter: JvmInterpreter) {
                 }
             }
             is Expr.Grouping -> resolve(expr.expression)
-            is Expr.Literal -> {}
+            is Expr.Literal -> {
+            }
             is Expr.Logical -> {
                 resolve(expr.left)
                 resolve(expr.right)
             }
             is Expr.Unary -> resolve(expr.right)
+            is Expr.Get -> resolve(expr.targetObject)
+            is Expr.Set -> {
+                resolve(expr.value)
+                resolve(expr.targetObject)
+            }
+            is Expr.This -> {
+                if(currentClass != ClassType.CLASS){
+                    Lox.error(expr.keyword,
+                        "Can't use 'this' outside of a class.")
+                    return
+                }
+                resolveLocal(expr, expr.keyword)
+            }
         }
     }
 
@@ -109,7 +146,7 @@ class Resolver(private val interpreter: JvmInterpreter) {
     private fun declare(name: Token) {
         if (scopes.isNotEmpty()) {
             val scope = scopes.peek()
-            if(scope.containsKey(name.lexeme)){
+            if (scope.containsKey(name.lexeme)) {
                 Lox.error(name, "Already variable with this name in this scope.")
             }
             scope[name.lexeme] = false
@@ -132,6 +169,10 @@ class Resolver(private val interpreter: JvmInterpreter) {
 
 }
 
-enum class FunctionType{
-    NONE, FUNCTION
+enum class FunctionType {
+    NONE, FUNCTION, METHOD, INITIALIZER
+}
+
+enum class ClassType{
+    NONE, CLASS
 }

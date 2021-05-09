@@ -6,7 +6,7 @@ class Scanner(private val source: String) {
 
     private var start = 0
     private var current = 0
-    private var line = 0
+    private var line = 1
     private val tokens = mutableListOf<Token>()
 
     fun scanTokens(): List<Token> {

@@ -5,7 +5,18 @@ interface LoxCallable {
     fun arity(): Int
 }
 
-data class LoxFunction(val declaration: Stmt.Function, val closure: JvmEnvironment) : LoxCallable {
+data class LoxFunction(
+    val declaration: Stmt.Function,
+    val closure: JvmEnvironment,
+    val isInitializer: Boolean = false
+) : LoxCallable {
+
+    fun bind(loxInstance: LoxInstance): LoxFunction {
+        val environment = JvmEnvironment(closure)
+        environment.define("this", loxInstance)
+        return copy(closure = environment)
+    }
+
     override fun call(interpreter: JvmInterpreter, arguments: List<Any?>): Any? {
         val environment = JvmEnvironment(closure)
         declaration.params.zip(arguments).forEach { (token, arg) ->
@@ -14,7 +25,13 @@ data class LoxFunction(val declaration: Stmt.Function, val closure: JvmEnvironme
         try {
             interpreter.executeBlock(declaration.body, environment)
         } catch (returnValue: Return) {
+            if(isInitializer){
+                return closure.getAt(0, "this")
+            }
             return returnValue.value
+        }
+        if (isInitializer) {
+            return closure.getAt(0, "this")
         }
         return null
     }
@@ -23,6 +40,5 @@ data class LoxFunction(val declaration: Stmt.Function, val closure: JvmEnvironme
     override fun toString(): String {
         return "<fn ${declaration.name.lexeme}>"
     }
-
 
 }

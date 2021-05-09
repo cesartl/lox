@@ -18,6 +18,9 @@ class AstPrinter {
         })"
         is Expr.Logical -> printExpr(expr.left) + expr.operator.lexeme + printExpr(expr.right)
         is Expr.Variable -> "${expr.name.lexeme}[l${expr.name.line}]"
+        is Expr.Get -> TODO()
+        is Expr.Set -> TODO()
+        is Expr.This -> TODO()
     }
 
     fun printStmts(stmts: List<Stmt>, indent: String = ""): String {
@@ -45,6 +48,7 @@ class AstPrinter {
         is Stmt.Return -> "return ${stmt.value?.let { printExpr(it) }}"
         is Stmt.Var -> "var ${stmt.name.lexeme}${stmt.initializer?.let { "=" + printExpr(it) }}"
         is Stmt.While -> "while(${printExpr(stmt.condition)}) ${printStmt(stmt.body, indent)}"
+        is Stmt.Class -> TODO()
     }
 
     private fun parenthesize(name: String, vararg exprs: Expr): String {

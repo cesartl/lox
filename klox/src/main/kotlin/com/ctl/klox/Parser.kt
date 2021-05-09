@@ -22,6 +22,7 @@ class Parser(private val tokens: List<Token>) {
                     consume(FUN, "Expected 'fun' after tailrec.")
                     function("function", true)
                 }
+                match(CLASS) -> classDeclaration()
                 match(FUN) -> function("function")
                 match(VAR) -> varDeclaration()
                 else -> statement()
@@ -32,7 +33,19 @@ class Parser(private val tokens: List<Token>) {
         }
     }
 
-    private fun function(kind: String, tailrec: Boolean = false): Stmt? {
+    private fun classDeclaration(): Stmt.Class {
+        val name = consume(IDENTIFIER, "Expect class name.")
+        consume(LEFT_BRACE, "Expect '{' before class body.")
+
+        val methods = mutableListOf<Stmt.Function>()
+        while(!check(RIGHT_BRACE) && !isAtEnd()){
+            methods.add(function("method"))
+        }
+        consume(RIGHT_BRACE, "Expect '}' after class body.")
+        return Stmt.Class(name, methods)
+    }
+
+    private fun function(kind: String, tailrec: Boolean = false): Stmt.Function {
         val name = consume(IDENTIFIER, "Expect $kind name.")
         consume(LEFT_PAREN, "Expect '(' after $kind name.")
         val parameters = mutableListOf<Token>()
@@ -189,6 +202,9 @@ class Parser(private val tokens: List<Token>) {
                     val name = expr.name
                     return Expr.Assign(name, value)
                 }
+                is Expr.Get -> {
+                    return Expr.Set(expr.targetObject, expr.name, value)
+                }
                 else -> error(equals, "Invalid assignment target.")
             }
         }
@@ -231,8 +247,11 @@ class Parser(private val tokens: List<Token>) {
     private fun call(): Expr {
         var expr = primary()
         while (true) {
-            if (match(LEFT_PAREN)) {
-                expr = finishCall(expr)
+            expr = if (match(LEFT_PAREN)) {
+                finishCall(expr)
+            } else if(match(DOT)){
+                val name = consume(IDENTIFIER, "Expect property name after '.'")
+                Expr.Get(expr, name)
             } else {
                 break
             }
@@ -265,6 +284,7 @@ class Parser(private val tokens: List<Token>) {
                 consume(RIGHT_PAREN, "Expect ')' after expression.")
                 return Expr.Grouping(expr)
             }
+            match(THIS) -> return Expr.This(previous())
             match(IDENTIFIER) -> return Expr.Variable(previous())
         }
         throw error(peek(), "Expect expression")

@@ -71,6 +71,16 @@ class JvmInterpreter {
             is Stmt.Return -> {
                 throw Return(stmt.value?.let { evaluate(it) })
             }
+            is Stmt.Class -> {
+                environment.define(stmt.name.lexeme, null)
+                val methods = stmt.methods.fold(mutableMapOf<String, LoxFunction>()) { acc, f ->
+                    val isInitializer = f.name.lexeme == "init"
+                    acc[f.name.lexeme] = LoxFunction(f, environment, isInitializer)
+                    acc
+                }
+                val klass = LoxClass(stmt.name.lexeme, methods)
+                environment.assign(stmt.name, klass)
+            }
         }
 
     }
@@ -164,13 +174,26 @@ class JvmInterpreter {
                         }
                         callee.call(this, arguments)
                     }
-                    else -> throw RuntimeError(expr.paren, "Can only call function and classes")
+                    else -> throw RuntimeError(expr.paren, "Can only call function and classes: ${expr.callee}:${callee?.javaClass}")
                 }
             }
+            is Expr.Get -> {
+                when (val obj = evaluate(expr.targetObject)) {
+                    is LoxInstance -> obj.get(expr.name)
+                    else -> throw RuntimeError(expr.name, "Only instances have properties.")
+                }
+            }
+            is Expr.Set -> {
+                when (val obj = evaluate(expr.targetObject)) {
+                    is LoxInstance -> obj.set(expr.name, evaluate(expr.value))
+                    else -> throw RuntimeError(expr.name, "Only instances have properties.")
+                }
+            }
+            is Expr.This -> lookupVariable(expr.keyword, expr)
         }
     }
 
-    private fun lookupVariable(name: Token, expr: Expr.Variable): Any? {
+    private fun lookupVariable(name: Token, expr: Expr): Any? {
         return locals[expr]?.let { distance ->
             environment.getAt(distance, name.lexeme)
         } ?: globals.get(name)

@@ -1,8 +1,17 @@
-tailrec fun foo(acc, n){
-    if(n == 0){
-        return acc;
-    }else{
-        return foo(acc+2, n-1);
-    }
+class Cake {
+
+  init(flavour){
+    this.flavour = flavour;
+  }
+
+  taste() {
+    var adjective = "delicious";
+    print "The " + this.getFlavour() + " cake is " + adjective + "!";
+  }
+  getFlavour(){
+    return this.flavour;
+  }
 }
-print foo(1, 10);
+
+var cake = Cake("aaaaa");
+cake.taste();
