@@ -149,7 +149,7 @@ class Scanner(private val source: String) {
             "or" to OR,
             "print" to PRINT,
             "return" to RETURN,
-            "super" to RETURN,
+            "super" to SUPER,
             "this" to THIS,
             "true" to TRUE,
             "var" to VAR,

@@ -11,6 +11,7 @@ sealed class Expr {
     data class Literal(val value: Any?) : Expr()
     data class Logical(val left: Expr, val operator: Token, val right: Expr) : Expr()
     data class Set(val targetObject: Expr, val name: Token, val value: Expr) : Expr()
+    data class Super(val keyword: Token, val method: Token) : Expr()
     data class This( val keyword: Token) : Expr()
     data class Unary(val operator: Token, val right: Expr) : Expr()
     data class Variable(val name: Token) : Expr()
@@ -18,7 +19,7 @@ sealed class Expr {
 
 sealed class Stmt {
     data class Block(val statements: List<Stmt>) : Stmt()
-    data class Class(val name: Token, val methods: List<Function>) : Stmt()
+    data class Class(val name: Token,val superclass: Expr.Variable?, val methods: List<Function>) : Stmt()
     data class Expression(val expression: Expr) : Stmt()
     data class Function(val name: Token, val params: List<Token>, val body: List<Stmt>) : Stmt()
     data class If(val condition: Expr, val thenBranch: Stmt, val elseBranch: Stmt?) : Stmt()
@@ -47,6 +48,7 @@ fun Expr.lineOffset(offset: Int): Expr = when (this) {
     is Expr.Unary -> this.copy(operator.lineOffset(offset), right.lineOffset(offset))
     is Expr.Variable -> this.copy(name.lineOffset(offset))
     is Expr.This -> this.copy(keyword = keyword.lineOffset(offset))
+    is Expr.Super -> this.copy(keyword = keyword.lineOffset(offset), method = method.lineOffset(offset))
 }
 
 fun Stmt.lineOffset(offset: Int): Stmt = when(this){

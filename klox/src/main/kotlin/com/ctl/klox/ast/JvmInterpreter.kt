@@ -14,7 +14,7 @@ class JvmInterpreter {
 
     init {
         globals.define("clock", object : LoxCallable {
-            override fun call(interpreter: JvmInterpreter, arguments: List<Any?>): Any? {
+            override fun call(interpreter: JvmInterpreter, arguments: List<Any?>): Any {
                 return Instant.now().epochSecond.toDouble()
             }
 
@@ -72,13 +72,29 @@ class JvmInterpreter {
                 throw Return(stmt.value?.let { evaluate(it) })
             }
             is Stmt.Class -> {
+                val superclass = stmt.superclass?.let {
+                    val superclass = evaluate(stmt.superclass)
+                    if (superclass !is LoxClass) {
+                        throw RuntimeError(it.name, "Superclass must be a class.")
+                    }
+                    superclass
+                }
                 environment.define(stmt.name.lexeme, null)
+
+                if (superclass != null) {
+                    environment = JvmEnvironment(environment)
+                    environment.define("super", superclass)
+                }
+
                 val methods = stmt.methods.fold(mutableMapOf<String, LoxFunction>()) { acc, f ->
                     val isInitializer = f.name.lexeme == "init"
                     acc[f.name.lexeme] = LoxFunction(f, environment, isInitializer)
                     acc
                 }
-                val klass = LoxClass(stmt.name.lexeme, methods)
+                val klass = LoxClass(stmt.name.lexeme, superclass, methods)
+                if(superclass != null){
+                    environment = environment.enclosing!!
+                }
                 environment.assign(stmt.name, klass)
             }
         }
@@ -174,7 +190,10 @@ class JvmInterpreter {
                         }
                         callee.call(this, arguments)
                     }
-                    else -> throw RuntimeError(expr.paren, "Can only call function and classes: ${expr.callee}:${callee?.javaClass}")
+                    else -> throw RuntimeError(
+                        expr.paren,
+                        "Can only call function and classes: ${expr.callee}:${callee?.javaClass}"
+                    )
                 }
             }
             is Expr.Get -> {
@@ -190,6 +209,17 @@ class JvmInterpreter {
                 }
             }
             is Expr.This -> lookupVariable(expr.keyword, expr)
+            is Expr.Super -> {
+                val distance = locals[expr] ?: throw RuntimeError(expr.keyword, "Could not resolve super")
+                val superclass = environment.getAt(distance, "super") as LoxClass
+                val instance = environment.getAt(distance - 1, "this") as LoxInstance
+                val method = superclass.findMethod(expr.method.lexeme)
+                    ?: throw RuntimeError(
+                        expr.keyword,
+                        "Could not find method ${expr.method.lexeme} on superclass ${superclass.name}"
+                    )
+                return method.bind(instance)
+            }
         }
     }
 

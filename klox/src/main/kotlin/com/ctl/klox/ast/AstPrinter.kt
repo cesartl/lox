@@ -21,6 +21,7 @@ class AstPrinter {
         is Expr.Get -> TODO()
         is Expr.Set -> TODO()
         is Expr.This -> TODO()
+        is Expr.Super -> TODO()
     }
 
     fun printStmts(stmts: List<Stmt>, indent: String = ""): String {

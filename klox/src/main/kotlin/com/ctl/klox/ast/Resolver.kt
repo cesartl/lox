@@ -59,17 +59,36 @@ class Resolver(private val interpreter: JvmInterpreter) {
                 val enclosingClass = currentClass
                 currentClass = ClassType.CLASS
                 declare(stmt.name)
+                define(stmt.name)
+
+                stmt.superclass?.let { superclass ->
+                    if (superclass.name.lexeme == stmt.name.lexeme) {
+                        Lox.error(stmt.superclass.name, "A class can't inherit from itself")
+                    }
+                    currentClass = ClassType.SUBCLASS
+                    this.resolve(superclass)
+                    beginScope()
+                    scopes.peek()["super"] = true
+                }
+
                 beginScope()
                 scopes.peek()["this"] = true
+
+
                 stmt.methods.forEach { method ->
                     var declaration = FunctionType.METHOD
-                    if(method.name.lexeme == "init"){
+                    if (method.name.lexeme == "init") {
                         declaration = FunctionType.INITIALIZER
                     }
                     resolveFunction(method, declaration)
                 }
-                define(stmt.name)
+
                 endScope()
+
+                if (stmt.superclass != null) {
+                    endScope()
+                }
+
                 currentClass = enclosingClass
             }
         }
@@ -111,10 +130,27 @@ class Resolver(private val interpreter: JvmInterpreter) {
                 resolve(expr.targetObject)
             }
             is Expr.This -> {
-                if(currentClass != ClassType.CLASS){
-                    Lox.error(expr.keyword,
-                        "Can't use 'this' outside of a class.")
+                if (currentClass != ClassType.CLASS) {
+                    Lox.error(
+                        expr.keyword,
+                        "Can't use 'this' outside of a class."
+                    )
                     return
+                }
+                resolveLocal(expr, expr.keyword)
+            }
+            is Expr.Super -> {
+                when (currentClass) {
+                    ClassType.NONE -> Lox.error(
+                        expr.keyword,
+                        "Can't use 'super' outside of a class."
+                    )
+                    ClassType.CLASS -> Lox.error(
+                        expr.keyword,
+                        "Can't use 'super' in a class with no superclass."
+                    )
+                    ClassType.SUBCLASS -> {
+                    }
                 }
                 resolveLocal(expr, expr.keyword)
             }
@@ -173,6 +209,6 @@ enum class FunctionType {
     NONE, FUNCTION, METHOD, INITIALIZER
 }
 
-enum class ClassType{
-    NONE, CLASS
+enum class ClassType {
+    NONE, CLASS, SUBCLASS
 }

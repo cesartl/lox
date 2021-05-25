@@ -2,7 +2,7 @@ package com.ctl.klox.ast
 
 import com.ctl.klox.Token
 
-class JvmEnvironment(private val enclosing: JvmEnvironment? = null) {
+class JvmEnvironment(val enclosing: JvmEnvironment? = null) {
     private val values = mutableMapOf<String, Any?>()
 
     fun define(name: String, value: Any? = Special.UNDEFINED) {
