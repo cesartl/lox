@@ -20,6 +20,8 @@
         "tuple": "cpp",
         "type_traits": "cpp",
         "vector": "cpp",
-        "ios": "c"
+        "ios": "c",
+        "string": "c",
+        "iosfwd": "c"
     }
 }
