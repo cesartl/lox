@@ -1,7 +1,4 @@
-{
-  var a = "outer";
-  {
-    var a = a;
-    print a;
-  }
+for(var x = 0; x < 1; x = x + 1){
+  print "Working";
 }
+print "done";
