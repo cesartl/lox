@@ -22,6 +22,7 @@
         "vector": "cpp",
         "ios": "c",
         "string": "c",
-        "iosfwd": "c"
+        "iosfwd": "c",
+        "__locale": "c"
     }
 }

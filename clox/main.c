@@ -5,6 +5,7 @@
 #include "common.h"
 #include "chunk.h"
 #include "debug.h"
+#include "value.h"
 #include "vm.h"
 
 static void repl()
@@ -70,8 +71,14 @@ static void runFile(const char *path)
         exit(70);
 }
 
+typedef struct {
+    uint8_t *code;
+} Cesar;
+
 int main(int argc, const char *argv[])
 {
+    printf("%lu\n",sizeof(ValueArray));
+    printf("%lu\n",sizeof(Chunk));
     initVM();
 
     if (argc == 1)

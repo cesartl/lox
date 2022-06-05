@@ -29,16 +29,17 @@ typedef enum
     OP_JUMP,
     OP_JUMP_IF_FALSE,
     OP_LOOP,
+    OP_CALL,
     OP_RETURN,
 } OpCode;
 
 typedef struct
 {
-    int count;
-    int capacity;
-    uint8_t *code;
-    int *lines;
-    ValueArray constants;
+    int count; //4
+    int capacity; //4
+    uint8_t *code; //8
+    int *lines; //8
+    ValueArray constants; //16
 } Chunk;
 
 void initChunk(Chunk *chunk);

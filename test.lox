@@ -1,4 +1,13 @@
-for(var x = 0; x < 1; x = x + 1){
-  print "Working";
+fun fib(n) {
+  if (n < 2) return n;
+  return fib(n - 2) + fib(n - 1);
 }
-print "done";
+
+var start = clock();
+print fib(35);
+print clock() - start;
+
+
+var start2 = clock();
+print fibNative(35);
+print clock() - start2;
